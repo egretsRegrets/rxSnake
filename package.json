@@ -1,0 +1,26 @@
+{
+  "name": "rx-snake",
+  "version": "1.0.0",
+  "description": "code-along w/ Thought Ram reactive snake tutorial",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mercantilism/rxSnake.git"
+  },
+  "author": "mercantilism",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mercantilism/rxSnake/issues"
+  },
+  "homepage": "https://github.com/mercantilism/rxSnake#readme",
+  "devDependencies": {
+    "webpack": "^3.5.6"
+  },
+  "dependencies": {
+    "rxjs": "^5.4.3"
+  }
+}
