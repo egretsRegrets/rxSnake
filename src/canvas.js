@@ -1,3 +1,4 @@
+
 export const COLS = 30;
 export const ROWS = 30;
 export const GAP_SIZE = 1;
