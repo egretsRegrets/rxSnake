@@ -1,9 +1,9 @@
-import { Observable, BehaviorSubject } from 'rxjs'
+import { Observable, BehaviorSubject, animationFrame } from './rxjs'
 
 import { createCanvasElement } from './canvas';
 import { DIRECTIONS, KEYS } from './interfaces'
 import { nextDirection, move, generateSnake, eat, generateApples } from './utils';
-import { SNAKE_LENGTH, POINTS_PER_APPLE, SPEED} from './constants';
+import { SNAKE_LENGTH, POINTS_PER_APPLE, SPEED, FPS} from './constants';
 
 /**
  * Starting vals:
@@ -91,3 +91,19 @@ let scene$ = Observable
         snake$, apples$, score$,
         (snake, apples, score) => ({snake, apples, score})
     );
+
+// rendering the scene:
+
+/**
+ * interval() expects a val in ms, so we convert
+ * a val representing 60 instances per second,
+ * to it's occurrence per ms
+ */
+
+/**
+ * interval excepts a schedular param
+ * animationFrame schedules to the call window.requestAnimationFrame
+ */
+let game$ = Observable
+    .interval(1000 / FPS, animationFrame);
+
