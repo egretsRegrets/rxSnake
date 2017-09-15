@@ -1,8 +1,8 @@
 import { Observable, BehaviorSubject, animationFrame } from './rxjs'
 
-import { createCanvasElement } from './canvas';
+import { createCanvasElement, renderScene, renderGameOver } from './canvas';
 import { DIRECTIONS, KEYS } from './interfaces'
-import { nextDirection, move, generateSnake, eat, generateApples } from './utils';
+import { nextDirection, move, generateSnake, eat, generateApples, isGameOver } from './utils';
 import { SNAKE_LENGTH, POINTS_PER_APPLE, SPEED, FPS} from './constants';
 
 /**
@@ -105,5 +105,12 @@ let scene$ = Observable
  * animationFrame schedules to the call window.requestAnimationFrame
  */
 let game$ = Observable
-    .interval(1000 / FPS, animationFrame);
+    .interval(1000 / FPS, animationFrame)
+    .withLatestFrom(scene$, (_, scene) => scene)
+    .takeUntil(!isGameOver(scene))
+    .subscribe({
+        next: (scene) => renderScene(ctx, scene),
+        complete: () => renderGameOver(ctx)
+    });
+
 

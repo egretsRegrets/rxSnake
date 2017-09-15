@@ -31,6 +31,10 @@ export function getRandomPosition(snake = []) {
     return getRandomPosition(snake);
 }
 
+export function renderScene() {}
+
+export function renderGameOver() {}
+
 function isEmptyCell(position, snake) {
     return !snake.some(segment => checkCollision(segment, position));
 }

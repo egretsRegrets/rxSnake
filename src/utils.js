@@ -2,6 +2,14 @@
 import { checkCollision, getRandomPosition } from './canvas';
 import { SNAKE_LENGTH, APPLE_COUNT } from './constants';
 
+export function isGameOver(scene) {
+    let snake = scene.snake;
+    let head = snake[0];
+    let body = snake.slice(1, snake.length);
+
+    return body.some(segment => checkCollision(segment, head));
+}
+
 export function nextDirection(previous, next) {
     let isOpposite = (previous, next) => {
         return next.x === previous.x * -1 || next.y === previous.y * -1;
