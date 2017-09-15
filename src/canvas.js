@@ -36,5 +36,6 @@ function isEmptyCell(position, snake) {
 }
 
 function getRandomNumber(min, max) {
+    // keep in ming Math.random() returns from 0 - 1, excl 0, excl 1
     return Math.floor(Math.random() * (max - min + 1) + min);
 }

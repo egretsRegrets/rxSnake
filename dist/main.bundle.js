@@ -6239,6 +6239,7 @@ function isEmptyCell(position, snake) {
 }
 
 function getRandomNumber(min, max) {
+    // keep in ming Math.random() returns from 0 - 1, excl 0, excl 1
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
@@ -6301,6 +6302,16 @@ document.body.appendChild(canvas);
  * ticks$ - pace of snake
  */
 let keydown$ = __WEBPACK_IMPORTED_MODULE_0_rxjs__["Observable"].fromEvent(document, 'keydown');
+
+let direction$ = keydown$
+.map(event => __WEBPACK_IMPORTED_MODULE_2__interfaces__["a" /* DIRECTIONS */][event.keyCode])
+// filter only for not-falsey returns
+.filter(direction => !!direction)
+.scan(__WEBPACK_IMPORTED_MODULE_3__utils__["e" /* nextDirection */])
+.startWith(INITIAL_DIRECTION)
+// we only emit when it looks like next here is not equal to previous
+.distinctUntilChanged();
+
 // emit tick at interval of speed
 let ticks$ = __WEBPACK_IMPORTED_MODULE_0_rxjs__["Observable"].interval(__WEBPACK_IMPORTED_MODULE_4__constants__["d" /* SPEED */]);
 /**
@@ -6316,16 +6327,6 @@ let snakeLength$ = length$
     // observable with other subscribers without re-starting the subject again
     .share();
 
-
-let direction$ = keydown$
-    .map(event => __WEBPACK_IMPORTED_MODULE_2__interfaces__["a" /* DIRECTIONS */][event.keyCode])
-    // filter only for not-falsey returns
-    .filter(direction => !!direction)
-    .scan(__WEBPACK_IMPORTED_MODULE_3__utils__["e" /* nextDirection */])
-    .startWith(INITIAL_DIRECTION)
-    // we only emit when it looks like next here is not equal to previous
-    .distinctUntilChanged();
-
 let score$ = snakeLength$
     // snakeLength emission is used to notify subscribers
     .startWith(0)
@@ -6335,13 +6336,26 @@ let score$ = snakeLength$
 let snake$ = ticks$
     // we use withLatest to throttle directions, we only care about values on ticks$
     .withLatestFrom(direction$, snakeLength$, (_, direction, snakeLength) => [direction, snakeLength])
+    // the result of generateSnake() is a seed value - 'snake'
     .scan(__WEBPACK_IMPORTED_MODULE_3__utils__["d" /* move */], Object(__WEBPACK_IMPORTED_MODULE_3__utils__["c" /* generateSnake */])())
     .share();
 
 let apples$ = snake$
     .scan(__WEBPACK_IMPORTED_MODULE_3__utils__["a" /* eat */], Object(__WEBPACK_IMPORTED_MODULE_3__utils__["b" /* generateApples */])())
+    // apples will come in with every tick, but only broadcast when changed
     .distinctUntilChanged()
     .share();
+
+let applesEaten$ = apples$
+    // skip the first emission, when apples are generated
+    .skip(1)
+    // give length$ it's next input, equal to POINT_PER_APPLE
+    .do(() => length$.next(__WEBPACK_IMPORTED_MODULE_4__constants__["b" /* POINTS_PER_APPLE */]))
+    // no other Observable is subscribing to this stream, so we do it manually
+    .subscribe();
+
+// combine our streams into one stream representing the whole scene to draw
+
 
 
 /***/ }),
@@ -20672,8 +20686,8 @@ const KEYS = {
 /* harmony export (immutable) */ __webpack_exports__["e"] = nextDirection;
 /* harmony export (immutable) */ __webpack_exports__["d"] = move;
 /* harmony export (immutable) */ __webpack_exports__["c"] = generateSnake;
-/* harmony export (immutable) */ __webpack_exports__["a"] = eat;
 /* harmony export (immutable) */ __webpack_exports__["b"] = generateApples;
+/* harmony export (immutable) */ __webpack_exports__["a"] = eat;
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__canvas__ = __webpack_require__(69);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__constants__ = __webpack_require__(70);
 
@@ -20693,6 +20707,10 @@ function nextDirection(previous, next) {
 }
 
 function move(snake, [direction, snakeLength]) {
+    /**
+     * snake is generated so that snake[0]
+     * is, initially, the right-most (highest) x value
+     */
     let nx = snake[0].x;
     let ny = snake[0].y;
 
@@ -20701,6 +20719,15 @@ function move(snake, [direction, snakeLength]) {
 
     let tail;
 
+    /**
+     * if snakeLength has changed
+     * assign new x, y vals to the var tail
+     * place tail at the front of snake
+     * if snakeLength has not changed,
+     * remove the last element - tail - from the snake
+     * modify the removed tail with latest direction vals
+     * put it back on at the front of the snake
+     */
     if (snakeLength > snake.length) {
         tail = {x: nx, y: ny};
     } else {
@@ -20724,9 +20751,31 @@ function generateSnake() {
     return snake;
 }
 
+function generateApples() {
+    let apples = [];
+
+    for (let i = 0; i < __WEBPACK_IMPORTED_MODULE_1__constants__["a" /* APPLE_COUNT */]; i++) {
+        /**
+         * note that getRandomPosition will have access to
+         * snake, as the curr param to scan();
+         * snake will be used inside getRandomPosition()
+         * with isEmptyCell()
+         */
+        apples.push(Object(__WEBPACK_IMPORTED_MODULE_0__canvas__["c" /* getRandomPosition */])());
+    }
+
+    return apples;
+}
+
 function eat(apples, snake) {
     let head = snake[0];
 
+    /**
+     * for every apple checkCollision w/ head
+     * if collision, remove collision apple from apples,
+     * return from eat with new array, spreading apples, adding new apple
+     * if !checkCollision() then return apples
+     */
     for (let i = 0; i < apples.length; i++){
         if (Object(__WEBPACK_IMPORTED_MODULE_0__canvas__["a" /* checkCollision */])(apples[i], head)) {
             apples.splice(i, 1);
@@ -20737,15 +20786,6 @@ function eat(apples, snake) {
     return apples;
 }
 
-function generateApples() {
-    let apples = [];
-
-    for (let i = 0; i < __WEBPACK_IMPORTED_MODULE_1__constants__["a" /* APPLE_COUNT */]; i++) {
-        apples.push(Object(__WEBPACK_IMPORTED_MODULE_0__canvas__["c" /* getRandomPosition */])());
-    }
-
-    return apples;
-}
 
 /***/ })
 /******/ ]);

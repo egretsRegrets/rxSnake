@@ -25,6 +25,16 @@ document.body.appendChild(canvas);
  * ticks$ - pace of snake
  */
 let keydown$ = Observable.fromEvent(document, 'keydown');
+
+let direction$ = keydown$
+.map(event => DIRECTIONS[event.keyCode])
+// filter only for not-falsey returns
+.filter(direction => !!direction)
+.scan(nextDirection)
+.startWith(INITIAL_DIRECTION)
+// we only emit when it looks like next here is not equal to previous
+.distinctUntilChanged();
+
 // emit tick at interval of speed
 let ticks$ = Observable.interval(SPEED);
 /**
@@ -40,16 +50,6 @@ let snakeLength$ = length$
     // observable with other subscribers without re-starting the subject again
     .share();
 
-
-let direction$ = keydown$
-    .map(event => DIRECTIONS[event.keyCode])
-    // filter only for not-falsey returns
-    .filter(direction => !!direction)
-    .scan(nextDirection)
-    .startWith(INITIAL_DIRECTION)
-    // we only emit when it looks like next here is not equal to previous
-    .distinctUntilChanged();
-
 let score$ = snakeLength$
     // snakeLength emission is used to notify subscribers
     .startWith(0)
@@ -59,10 +59,35 @@ let score$ = snakeLength$
 let snake$ = ticks$
     // we use withLatest to throttle directions, we only care about values on ticks$
     .withLatestFrom(direction$, snakeLength$, (_, direction, snakeLength) => [direction, snakeLength])
+    // the result of generateSnake() is a seed value - 'snake'
     .scan(move, generateSnake())
     .share();
 
 let apples$ = snake$
     .scan(eat, generateApples())
+    // apples will come in with every tick, but only broadcast when changed
     .distinctUntilChanged()
     .share();
+
+let applesEaten$ = apples$
+    // skip the first emission, when apples are generated
+    .skip(1)
+    // give length$ it's next input, equal to POINT_PER_APPLE
+    .do(() => length$.next(POINTS_PER_APPLE))
+    // no other Observable is subscribing to this stream, so we do it manually
+    .subscribe();
+
+
+/**
+ * We need to combine our streams into one stream representing
+ * the whole scene to draw.
+ * We can think, 'what are the streams we need to surface as game elements?' :
+ * snake$, score$, apples$
+ */
+
+let scene$ = Observable
+    // we want to produce an object representing game state
+    .combineLatest(
+        snake$, apples$, score$,
+        (snake, apples, score) => ({snake, apples, score})
+    );
