@@ -107,7 +107,7 @@ let scene$ = Observable
 let game$ = Observable
     .interval(1000 / FPS, animationFrame)
     .withLatestFrom(scene$, (_, scene) => scene)
-    .takeUntil(!isGameOver(scene))
+    .takeWhile(scene => !isGameOver(scene))
     .subscribe({
         next: (scene) => renderScene(ctx, scene),
         complete: () => renderGameOver(ctx)

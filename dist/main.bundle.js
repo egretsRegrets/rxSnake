@@ -1844,6 +1844,8 @@ exports.MulticastOperator = MulticastOperator;
 /* harmony export (immutable) */ __webpack_exports__["b"] = createCanvasElement;
 /* harmony export (immutable) */ __webpack_exports__["a"] = checkCollision;
 /* harmony export (immutable) */ __webpack_exports__["c"] = getRandomPosition;
+/* harmony export (immutable) */ __webpack_exports__["e"] = renderScene;
+/* harmony export (immutable) */ __webpack_exports__["d"] = renderGameOver;
 
 const COLS = 30;
 /* unused harmony export COLS */
@@ -1887,6 +1889,93 @@ function getRandomPosition(snake = []) {
 
     // re-roll if !isEmptyCell
     return getRandomPosition(snake);
+}
+
+function renderScene(ctx, scene) {
+    renderBackground(ctx);
+    renderScore(ctx, scene.score);
+    renderApples(ctx, scene.apples);
+    renderSnake(ctx, scene.snake);
+}
+
+function renderGameOver(ctx) {}
+
+// non-export rendering functions
+
+function renderBackground(ctx) {
+    // canvas background color
+    ctx.fillStyle = '#EEE';
+    // draw rectangle
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+}
+
+function renderScore(ctx, score) {
+    let textX = CANVAS_WIDTH / 2;
+    let textY = CANVAS_HEIGHT / 2;
+
+    drawText(
+        ctx,
+        score.toString(),
+        textX,
+        textY,
+        'rgba(0,0,0,.2)',
+        150
+    );
+}
+
+function renderApples(ctx, apples) {
+    apples.forEach(apple => paintCell(
+        ctx, apple, 'red'
+    ));
+}
+
+function renderSnake(ctx, snake) {
+    snake.forEach((segment, index) => paintCell(
+        ctx,
+        wrapBounds(segment),
+        getSegmentColor(index)
+    ));
+}
+
+function drawText(
+    ctx,
+    text,
+    x,
+    y,
+    fillStyle,
+    fontSize,
+    horizontalAlign = 'center',
+    verticalAlign = 'middle'
+) {
+    ctx.fillStyle = fillStyle;
+    ctx.font = `bold ${fontSize}px sans-serif`;
+
+    let textX = x;
+    let textY = y;
+
+    ctx.textAlign = horizontalAlign;
+    ctx.textBaseline = verticalAlign;
+
+    ctx.fillText(text, textX, textY);
+}
+
+function getSegmentColor(index) {
+    return index === 0 ? 'black' : '#2196f3';
+}
+
+function paintCell(ctx, point, color) {
+    const x = point.x * CELL_SIZE + (point.x * GAP_SIZE);
+    const y = point.y * CELL_SIZE + (point.y * GAP_SIZE);
+
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+}
+
+function wrapBounds(point) {
+    point.x = point.x >= COLS ? 0 : point.x < 0 ? COLS - 1 : point.x;
+    point.y = point.y >= ROWS ? 0 : point.y < 0 ? ROWS - 1 : point.y;
+
+    return point;
 }
 
 function isEmptyCell(position, snake) {
@@ -1964,7 +2053,7 @@ let direction$ = keydown$
 .map(event => __WEBPACK_IMPORTED_MODULE_2__interfaces__["a" /* DIRECTIONS */][event.keyCode])
 // filter only for not-falsey returns
 .filter(direction => !!direction)
-.scan(__WEBPACK_IMPORTED_MODULE_3__utils__["e" /* nextDirection */])
+.scan(__WEBPACK_IMPORTED_MODULE_3__utils__["f" /* nextDirection */])
 .startWith(INITIAL_DIRECTION)
 // we only emit when it looks like next here is not equal to previous
 .distinctUntilChanged();
@@ -1994,7 +2083,7 @@ let snake$ = ticks$
     // we use withLatest to throttle directions, we only care about values on ticks$
     .withLatestFrom(direction$, snakeLength$, (_, direction, snakeLength) => [direction, snakeLength])
     // the result of generateSnake() is a seed value - 'snake'
-    .scan(__WEBPACK_IMPORTED_MODULE_3__utils__["d" /* move */], Object(__WEBPACK_IMPORTED_MODULE_3__utils__["c" /* generateSnake */])())
+    .scan(__WEBPACK_IMPORTED_MODULE_3__utils__["e" /* move */], Object(__WEBPACK_IMPORTED_MODULE_3__utils__["c" /* generateSnake */])())
     .share();
 
 let apples$ = snake$
@@ -2039,7 +2128,14 @@ let scene$ = __WEBPACK_IMPORTED_MODULE_0__rxjs__["b" /* Observable */]
  * animationFrame schedules to the call window.requestAnimationFrame
  */
 let game$ = __WEBPACK_IMPORTED_MODULE_0__rxjs__["b" /* Observable */]
-    .interval(1000 / __WEBPACK_IMPORTED_MODULE_4__constants__["b" /* FPS */], __WEBPACK_IMPORTED_MODULE_0__rxjs__["c" /* animationFrame */]);
+    .interval(1000 / __WEBPACK_IMPORTED_MODULE_4__constants__["b" /* FPS */], __WEBPACK_IMPORTED_MODULE_0__rxjs__["c" /* animationFrame */])
+    .withLatestFrom(scene$, (_, scene) => scene)
+    .takeWhile(scene => !Object(__WEBPACK_IMPORTED_MODULE_3__utils__["d" /* isGameOver */])(scene))
+    .subscribe({
+        next: (scene) => Object(__WEBPACK_IMPORTED_MODULE_1__canvas__["e" /* renderScene */])(ctx, scene),
+        complete: () => Object(__WEBPACK_IMPORTED_MODULE_1__canvas__["d" /* renderGameOver */])(ctx)
+    });
+
 
 
 
@@ -5296,8 +5392,8 @@ var SwitchMapSubscriber = (function (_super) {
 const DIRECTIONS = {
     37: { x: -1, y: 0}, // left arrow
     39: { x: 1, y: 0}, // right arrow
-    38: { x: 0, y: 1}, // down arrow
-    40: { x: 0, y: -1} // up arrow
+    40: { x: 0, y: 1}, // down arrow
+    38: { x: 0, y: -1} // up arrow
 };
 /* harmony export (immutable) */ __webpack_exports__["a"] = DIRECTIONS;
 
@@ -5316,8 +5412,9 @@ const KEYS = {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony export (immutable) */ __webpack_exports__["e"] = nextDirection;
-/* harmony export (immutable) */ __webpack_exports__["d"] = move;
+/* harmony export (immutable) */ __webpack_exports__["d"] = isGameOver;
+/* harmony export (immutable) */ __webpack_exports__["f"] = nextDirection;
+/* harmony export (immutable) */ __webpack_exports__["e"] = move;
 /* harmony export (immutable) */ __webpack_exports__["c"] = generateSnake;
 /* harmony export (immutable) */ __webpack_exports__["b"] = generateApples;
 /* harmony export (immutable) */ __webpack_exports__["a"] = eat;
@@ -5326,6 +5423,14 @@ const KEYS = {
 
 
 
+
+function isGameOver(scene) {
+    let snake = scene.snake;
+    let head = snake[0];
+    let body = snake.slice(1, snake.length);
+
+    return body.some(segment => Object(__WEBPACK_IMPORTED_MODULE_0__canvas__["a" /* checkCollision */])(segment, head));
+}
 
 function nextDirection(previous, next) {
     let isOpposite = (previous, next) => {
