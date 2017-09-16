@@ -1898,7 +1898,15 @@ function renderScene(ctx, scene) {
     renderSnake(ctx, scene.snake);
 }
 
-function renderGameOver(ctx) {}
+function renderGameOver(ctx) {
+    ctx.fillStyle = 'rgba(255,255,255,.7)';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    let textX = CANVAS_WIDTH / 2;
+    let textY = CANVAS_HEIGHT / 2;
+
+    drawText(ctx, 'GAME OVER!', textX, textY, 'black', 25);
+}
 
 // non-export rendering functions
 
